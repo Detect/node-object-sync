@@ -1,7 +1,7 @@
 node-object-sync
 ================
 
-[Check out a running demo of the test/ directory here](http://98.158.186.218:8087/)
+[Check out a running demo of the test/ directory here](http://detect.no.de:8080/)
 
 node-object-sync transparently synchronizes objects across multiple connected clients. It's a low-level library that aims to take the pain out of synchronizing state across clients.
 
