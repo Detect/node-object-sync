@@ -72,6 +72,6 @@ server.use '/coffee', connect.compiler
   src: './static/coffee'
   enable: ['coffeescript']
 
-server.use '/', connect.staticProvider './static'
-server.listen 80
+server.use '/', connect.static './static'
+server.listen 8080
 module.exports = server
