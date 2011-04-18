@@ -1,7 +1,8 @@
 # Don't get too excited, this is not a real test!
 
 connect = require 'connect'
-
+redis = require 'redis'
+client = redis.createClient()
 ObjectSync = require '../lib/object-sync'
 
 server = connect.createServer()
@@ -12,13 +13,16 @@ id_counter = 1
 objects = {}
 object_owners = {}
 
+client.del 'objectsync_object_ids'
 
-sync = ObjectSync.listen server, 
+sync = ObjectSync.listen server,
   destroy: (id, sid, callback) ->
     if not objects[id]
       return callback
         code: 'invalid_id'
     delete objects[id]
+    client.hdel 'objectsync_object_ids', id
+    client.del 'objectsync_object_' + id
     if object_owners[sid]
       idx = object_owners[sid].indexOf id
       object_owners[sid].splice idx, 1 if idx isnt -1
@@ -31,6 +35,7 @@ sync = ObjectSync.listen server,
       for prop, val of obj when objects[obj.id][prop] isnt val
         same = false
         objects[obj.id][prop] = val
+        client.hset 'objectsync_object_' + obj.id , prop, val
       callback null, objects[obj.id], not same
     else callback
       code: 'invalid_id'
@@ -38,6 +43,9 @@ sync = ObjectSync.listen server,
   create: (obj, sid, callback) ->
     obj.id = id_counter++
     objects[obj.id] = obj
+    client.hset 'objectsync_object_ids', obj.id, 1
+    for prop, val of obj
+      client.hset 'objectsync_object_' + obj.id, prop, val
 
     object_owners[sid] or= []
     object_owners[sid].push obj.id
@@ -56,6 +64,7 @@ sync.on 'disconnect', (sid) ->
   if object_owners[sid]
     ids = [].concat(object_owners[sid])
     sync.destroy id for id in ids
+
 
 # serve list of of game objects to new clients
 server.use '/init', (req, res, next) ->
